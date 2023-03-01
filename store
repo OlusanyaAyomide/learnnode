@@ -1,0 +1,44 @@
+//filtering
+// try {
+// console.log(req.query);
+// let queryObject = { ...req.query };
+// const excludedFields = ["page", "fields", "count", "sort", "limit"];
+// excludedFields.forEach((item) => delete queryObject[item]);
+// queryObject = JSON.stringify(queryObject);
+// queryObject = JSON.parse(queryObject.replace(/(gt|gte|lt|lte)/g, "$$$1"));
+// let query = Tour.find(queryObject);
+
+//sorting
+
+// if (req.query.sort) {
+//   const sortedBy = req.query.sort.split(",").join(" ");
+//   query.sort(sortedBy);
+// } else {
+//   query.sort("-price");
+// }
+
+//limiting
+
+// if (req.query.fields) {
+//   const Fields = req.query.fields.split(",").join(" ");
+//   query.select(Fields);
+// } else {
+//   query.select("-__v ");
+// }
+
+//pagination
+// const page = req.query.page || 1;
+// const limit = req.query.limit || 5;
+// const skipBy = (page - 1) * limit;
+// if (req.query.page) {
+//   const docLength = await Tour.countDocuments();
+//   if (skipBy >= docLength) {
+//     return res.status(400).json({ res: "Page Number Exceeded" });
+//   }
+// }
+// query.skip(skipBy).limit(limit);
+
+// } catch (err) {
+//   res.status(400).json({ err });
+// }
+// };
