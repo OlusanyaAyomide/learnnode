@@ -1,8 +1,11 @@
 import { Tour } from "../models/TourModel.js";
+import catchAsync from "../utills/RolesandError.js";
 import ApiFeatures from "../utills/ApiFeatute.js";
+import AppError from "../utills/AppError.js";
+import slugify from "slugify";
+import { Reviews } from "../models/ReviewModel.js";
 
-export const getBaseurl = async (req, res) => {
-  console.log(req.body.array);
+export const getBaseurl = catchAsync(async (req, res) => {
   const features = new ApiFeatures(Tour.find(), req.query)
     .filtering()
     .sorting()
@@ -10,63 +13,60 @@ export const getBaseurl = async (req, res) => {
     .paginating();
   const tour = await features.query;
 
-  return res.status(200).json({
+  res.status(200).json({
     status: "success",
     length: tour.length,
+    user: req.user,
     tour: tour,
   });
-};
+});
 
-export const postBaseUrl = async (req, res) => {
-  const { name, rating, price, tags } = req.body;
-  try {
-    const newTour = await Tour.create({ name, rating, price, tags });
-    res.status(200).json(newTour);
-  } catch (err) {
-    res.status(400).json({ res: err });
-  }
-};
+export const postBaseUrl = catchAsync(async (req, res, next) => {
+  const { name, rating, price, tags, secretTour } = req.body;
+  const newTour = await Tour.create({ name, rating, price, tags, secretTour });
+  res.status(200).json(newTour);
+});
 
-export const getTour = async (req, res) => {
-  try {
-    const tour = await Tour.findById(req.params.id);
-    return res.status(200).json({
-      status: "success",
-      data: {
-        tour,
-      },
-    });
-  } catch (err) {
-    res.status(400).json({ err });
+export const getTour = catchAsync(async (req, res, next) => {
+  const tour = await Tour.findById(req.params.id);
+  console.log(tour);
+  if (!tour) {
+    console.log("heree");
+    return next(new AppError("No tour is found", 404));
   }
-};
+  return res.status(200).json({
+    status: "success",
+    data: {
+      tour,
+    },
+  });
+});
 
-export const postTour = async (req, res) => {
-  const { name, rating, price, tags } = req.body;
-  console.log(req.body);
-  try {
-    const tour = await Tour.findByIdAndUpdate(
-      req.params.id,
-      { name, rating, price, tags },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-    res.status(200).json({ status: "success", data: tour });
-  } catch (err) {
-    res.status(400).json({ err });
+export const postTour = catchAsync(async (req, res, next) => {
+  const { name, rating, price, tags, secretTour } = req.body;
+  let slug;
+  if (name) {
+    slug = slugify(name, { lower: true, trim: true });
   }
-};
+  const tour = await Tour.findByIdAndUpdate(
+    req.params.id,
+    { name, rating, price, tags, secretTour, slug },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+  if (!tour) {
+    console.log("heree");
+    return next(new AppError("No tour is found", 404));
+  }
+  res.status(200).json({ status: "success", data: tour });
+});
 
-export const DeleteTour = async (req, res) => {
-  try {
-    const tour = await Tour.findByIdAndDelete(req.params.id);
-    res.status(204).json({ status: "success", data: "null" });
-  } catch (err) {
-    res.status(400).json({ err });
-  }
-};
+export const DeleteTour = catchAsync(async (req, res) => {
+  const tour = await Tour.findByIdAndDelete(req.params.id);
+  res.status(204).json({ status: "success", data: "null" });
+});
 
 export const TourTopAlias = async (req, res, next) => {
   req.query.sort = "price,-rating";
@@ -119,3 +119,20 @@ export const unwind = async (req, res) => {
     stat,
   });
 };
+
+
+export const postReview = catchAsync(async (req,res,next)=>{
+    const {body,summary,tour,rating} = req.body;
+    const review = await Reviews.create({body,summary,tour,rating,user:req.user.id})
+    return res.status(200).json({
+      status:"success",
+      data:{review}
+    })  
+})
+
+export const getReviews = catchAsync(async(req,res,next)=>{
+  const reviews = await Reviews.find({})
+  return res.status(200).json({
+    status:"success",data:{reviews}
+  })
+})
